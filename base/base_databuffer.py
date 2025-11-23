@@ -8,7 +8,6 @@ class DataBuffer:
         self.Wheel2_RPM = []
         self.Wheel3_RPM = []
         self.Wheel4_RPM = []
-        self.Theta = []
         self.Drifting = []
         self.Send_Timestamp = []
         self.Left_Trigger_Pressed = []
@@ -16,3 +15,16 @@ class DataBuffer:
         self.Theta_Right = []
         self.RPM_Left = []
         self.RPM_Right = []
+
+        #THESE GO TO BASE_WIFI 
+        self.Theta = []
+        self.Omega = []
+        self.look_theta = []
+
+if __name__ == "__main__":
+    db = DataBuffer()
+    while True:     
+        with db.lock:
+            print("Omega:", db.Omega)
+            print("Theta:", db.Theta)
+            print("look_theta:", db.look_theta)

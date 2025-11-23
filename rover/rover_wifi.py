@@ -8,42 +8,29 @@ import sys
 rover_buffer = DataBuffer()
 
 class Message:
-    def __init__(self, motor_rpm: float, wheel1_rpm: float, wheel2_rpm: float, wheel3_rpm: float, wheel4_rpm: float, theta: float, send_timestamp: float, drifting: bool):
-        self.motor_rpm = motor_rpm
-        self.wheel1_rpm = wheel1_rpm
-        self.wheel2_rpm = wheel2_rpm
-        self.wheel3_rpm = wheel3_rpm
-        self.wheel4_rpm = wheel4_rpm
+    def __init__(self, omega: float, theta: float, look_theta: float):
+        self.omega = omega
         self.theta = theta
-        self.send_timestamp = send_timestamp
-        self.drifting = drifting
+        self.look_theta = look_theta
 
     def to_binary(self) -> bytes:
-        return struct.pack('ddddddd?', self.motor_rpm, self.wheel1_rpm, self.wheel2_rpm, self.wheel3_rpm, self.wheel4_rpm, self.theta, self.send_timestamp, self.drifting)
+        return struct.pack('ddd', self.omega, self.theta, self.look_theta)
 
     @classmethod
     def from_binary(cls, data: bytes) -> 'Message':
-        return cls(*struct.unpack('ddddddd?', data))
+        return cls(*struct.unpack('ddd', data))
 
 def append_to_buffer(msg: Message):
-    current_time = time.time()
     with rover_buffer.lock:
-        rover_buffer.Motor_RPM.append(msg.motor_rpm)
-        rover_buffer.Wheel1_RPM.append(msg.wheel1_rpm)
-        rover_buffer.Wheel2_RPM.append(msg.wheel2_rpm)
-        rover_buffer.Wheel3_RPM.append(msg.wheel3_rpm)
-        rover_buffer.Wheel4_RPM.append(msg.wheel4_rpm)
+        rover_buffer.Omega.append(msg.omega)
         rover_buffer.Theta.append(msg.theta)
-        rover_buffer.Send_Timestamp.append(msg.send_timestamp)
-        rover_buffer.Receive_Timestamp.append(current_time)
-        rover_buffer.Drifting.append(msg.drifting)
+        rover_buffer.look_theta.append(msg.look_theta)
 
-def print_latest(elapsed):
+def print_latest():
     with rover_buffer.lock:
-        if not rover_buffer.Motor_RPM:
+        if not rover_buffer.Omega:
             return
-        drifting_val = 1 if rover_buffer.Drifting[-1] else 0
-        print(f"{{{rover_buffer.Motor_RPM[-1]}, {rover_buffer.Wheel1_RPM[-1]}, {rover_buffer.Wheel2_RPM[-1]}, {rover_buffer.Wheel3_RPM[-1]}, {rover_buffer.Wheel4_RPM[-1]}, {rover_buffer.Theta[-1]}, {drifting_val}, {elapsed:.1f} s}}")
+        print(f"{{{rover_buffer.Omega[-1]}, {rover_buffer.Theta[-1]}, {rover_buffer.look_theta[-1]}}}")
 
 if __name__ == "__main__":
     # Open Zenoh session (default config should work over WiFi)
@@ -67,12 +54,10 @@ if __name__ == "__main__":
     # Keep running to listen (use Ctrl+C to stop, or adjust for production)
     print("Rover listening...")
     print_frequency = 0.005  # User can change this value (in seconds)
-    elapsed = 0.0
     try:
         while True:
-            print_latest(elapsed)
+            print_latest()
             time.sleep(print_frequency)
-            elapsed += print_frequency
     except KeyboardInterrupt:
         pass
 
