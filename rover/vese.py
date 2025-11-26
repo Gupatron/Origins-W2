@@ -6,13 +6,17 @@ import time
 import glob
 import serial
 import threading
+import json
 from pyvesc import SetDutyCycle, SetRPM, encode
 
-
+# ----------------------------------------------------------------------
+# Config (same file rover.py uses)
+# ----------------------------------------------------------------------
+config = json.load(open('config.json'))
 BAUD = 230400
-POLE_PAIRS = 23.65 # keep old default
-MAX_DUTY = 0.3  # default 30 %
-RAMP_TIME =0.3
+POLE_PAIRS = config.get('pole_pairs', 23.65)  # keep old default
+MAX_DUTY = config.get('max_duty_percent', 30) / 100.0  # default 30 %
+RAMP_TIME = config.get('ramp_time_s', 0.3)
 MAX_ERPM = 100000  # Example max ERPM; adjust based on motor specs
 
 # ----------------------------------------------------------------------
