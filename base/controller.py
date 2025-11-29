@@ -1,3 +1,4 @@
+# controller.py
 import pygame
 import time
 from base_databuffer import DataBuffer   # ← Moved to top!
@@ -10,14 +11,10 @@ class Controller:
         self.look_theta = 0.0
 
         # Tunable parameters
-        self.MAX_OMEGA = 200.0
+        self.MAX_OMEGA = 0.05
         self.MAX_LOOK_RATE = 180.0
         self.STICK_DEADZONE = 0.12
         self.TRIGGER_DEADZONE = 0.08
-
-        # Initialize Pygame
-        pygame.init()
-        pygame.joystick.init()
 
         if pygame.joystick.get_count() == 0:
             raise RuntimeError("No controller detected!")
@@ -98,7 +95,7 @@ class Controller:
                         lst.append(0)
 
                 # === Debug output ===
-                print(f"{{{omega}, {theta}, {self.look_theta}}}")
+                print(f"Controller updated: {{{omega}, {theta}, {self.look_theta}}}")
 
                 time.sleep(self.loop_period)
 
@@ -106,8 +103,6 @@ class Controller:
             print("\nController stopped.")
         finally:
             self.joy.quit()
-            pygame.quit()
-
 
 # ============================================================================
 # Standalone test
@@ -115,6 +110,8 @@ class Controller:
 
 
 if __name__ == "__main__":
+    pygame.init()
+    pygame.joystick.init()
     buffer = DataBuffer()                                   # Now works!
     controller = Controller(databuffer=buffer, frequency=20)
     controller.run()

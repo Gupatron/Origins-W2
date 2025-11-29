@@ -1,4 +1,5 @@
 # base_wifi.py
+# base_wifi.py
 import zenoh
 import time
 import struct
@@ -19,31 +20,34 @@ class Message:
     def from_binary(cls, data: bytes) -> 'Message':
         return cls(*struct.unpack('ddd', data))
 
-def append_dummy_to_buffer():
-    with base_buffer.lock:
-        base_buffer.Omega.append(10.0)
-        base_buffer.Theta.append(20.0)
-        base_buffer.look_theta.append(30.0)
+def append_dummy_to_buffer(buffer):
+    with buffer.lock:
+        buffer.Omega.append(10.0)
+        buffer.Theta.append(20.0)
+        buffer.look_theta.append(30.0)
 
-def get_latest_message_from_buffer() -> Message | None:
-    with base_buffer.lock:
-        if not base_buffer.Omega:
+def get_latest_message_from_buffer(buffer) -> Message | None:
+    with buffer.lock:
+        if not buffer.Omega:
             return None
         return Message(
-            base_buffer.Omega[-1],
-            base_buffer.Theta[-1],
-            base_buffer.look_theta[-1]
+            buffer.Omega[-1],
+            buffer.Theta[-1],
+            buffer.look_theta[-1]
         )
 
 def send_message(pub, msg: Message):
     if msg:
         pub.put(msg.to_binary())
 
-def print_latest():
-    with base_buffer.lock:
-        if not base_buffer.Omega:
+def print_latest(buffer):
+    with buffer.lock:
+        if not buffer.Omega:
             return
-        print(f"{{{base_buffer.Omega[-1]}, {base_buffer.Theta[-1]}, {base_buffer.look_theta[-1]}}}")
+        print(f"{{{buffer.Omega[-1]}, {buffer.Theta[-1]}, {buffer.look_theta[-1]}}}")
+
+def reply_callback(sample):
+    print(f"Received reply: {sample.payload.to_bytes().decode('utf-8')}")
 
 if __name__ == "__main__":
     # Open Zenoh session (default config should work over WiFi)
@@ -55,9 +59,6 @@ if __name__ == "__main__":
     from_rover_key = 'rover/to/base'
 
     # Subscriber for replies from rover
-    def reply_callback(sample):
-        print(f"Received reply: {sample.payload.to_bytes().decode('utf-8')}")
-
     sub = session.declare_subscriber(from_rover_key, reply_callback)
 
     # Publisher for sending to rover
@@ -73,9 +74,9 @@ if __name__ == "__main__":
                 base_buffer.Omega.append(10.0 + counter)
                 base_buffer.Theta.append(20.0 + counter)
                 base_buffer.look_theta.append(30.0 + counter)
-            msg = get_latest_message_from_buffer()
+            msg = get_latest_message_from_buffer(base_buffer)
             send_message(pub, msg)
-            print_latest()
+            print_latest(base_buffer)
             time.sleep(print_frequency)
             counter += 1.0
     except KeyboardInterrupt:
