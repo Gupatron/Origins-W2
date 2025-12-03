@@ -1,4 +1,4 @@
-# rover_wifi.py
+
 import zenoh
 import struct
 from rover_databuffer import DataBuffer
